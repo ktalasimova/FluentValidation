@@ -76,18 +76,11 @@ namespace FluentValidation {
 		void SetDisplayName(Func<ValidationContext<T>, string> factory);
 
 		/// <summary>
-		/// Adds a validator to this rule.
+		/// Adds a component to the rule.
 		/// </summary>
-		/// <returns>A rule component for further configuration.</returns>
-		RuleComponent<T, TProperty> AddValidator(IPropertyValidator<T, TProperty> validator);
-
-		/// <summary>
-		/// Adds an async validator to this rule.
-		/// </summary>
-		/// <param name="asyncValidator">The async property validator to invoke</param>
-		/// <param name="fallback">A synchronous property validator to use as a fallback if executed synchronously. This parameter is optional. If omitted, the async validator will be called synchronously if needed.</param>
-		/// <returns>A rule component for further configuration.</returns>
-		RuleComponent<T, TProperty> AddAsyncValidator(IAsyncPropertyValidator<T, TProperty> asyncValidator, IPropertyValidator<T, TProperty> fallback = null);
+		/// <param name="component"></param>
+		/// <typeparam name="TValidator"></typeparam>
+		void Add<TValidator>(RuleComponent<T, TProperty, TValidator> component);
 
 		/// <summary>
 		/// The current rule component.

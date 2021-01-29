@@ -149,14 +149,12 @@ namespace FluentValidation.Internal {
 			_displayNameFactory = context => ValidatorOptions.Global.DisplayNameResolver(containerType, member, expression);
 		}
 
-		public RuleComponent<T, TValue> AddValidator(IPropertyValidator<T, TValue> validator) {
-			var component = new RuleComponent<T, TValue>(validator, this);
+		public void Add<TValidator>(RuleComponent<T,TValue,TValidator> component) {
 			_steps.Add(component);
-			return component;
 		}
 
-		public RuleComponent<T, TValue> AddAsyncValidator(IAsyncPropertyValidator<T, TValue> asyncValidator, IPropertyValidator<T, TValue> fallback = null) {
-			var component = new RuleComponent<T, TValue>(asyncValidator, fallback, this);
+		public RuleComponent<T, TValue, TValidator> AddAsyncValidator<TValidator>(TValidator asyncValidator) where TValidator : IAsyncPropertyValidator<T, TValue> {
+			var component = new RuleComponent<T, TValue, TValidator>(asyncValidator, null, this);
 			_steps.Add(component);
 			return component;
 		}
@@ -332,43 +330,54 @@ namespace FluentValidation.Internal {
 			return failure;
 		}
 
-		public IRuleBuilderOptions<T, TValue> SetValidator(IPropertyValidator<T, TValue> validator) {
+		public IRuleBuilderOptions<T, TValue, TValidator> SetValidator<TValidator>(TValidator validator) where TValidator : IPropertyValidator<T, TValue> {
 			if (validator == null) throw new ArgumentNullException(nameof(validator));
-			return AddValidator(validator);
+			var component = new RuleComponent<T, TValue, TValidator>(validator, this);
+			Add(component);
+			return component;
 		}
 
-		public IRuleBuilderOptions<T, TValue> SetAsyncValidator(IAsyncPropertyValidator<T, TValue> validator) {
+		public IRuleBuilderOptions<T, TValue, TValidator> SetAsyncValidator<TValidator>(TValidator validator) where TValidator : IAsyncPropertyValidator<T,TValue> {
 			if (validator == null) throw new ArgumentNullException(nameof(validator));
 			// See if the async validator supports synchronous execution too.
 			IPropertyValidator<T, TValue> fallback = validator as IPropertyValidator<T, TValue>;
-			return AddAsyncValidator(validator, fallback);
+			var component = new RuleComponent<T, TValue, TValidator>(validator, fallback, this);
+			Add(component);
+			return component;
 		}
 
-		public IRuleBuilderOptions<T, TValue> SetValidator(IValidator<TValue> validator, params string[] ruleSets) {
+		public IRuleBuilderOptions<T, TValue, IChildValidatorAdaptor> SetValidator(IValidator<TValue> validator, params string[] ruleSets) {
 			validator.Guard("Cannot pass a null validator to SetValidator", nameof(validator));
 			var adaptor = new ChildValidatorAdaptor<T,TValue>(validator, validator.GetType()) {
 				RuleSets = ruleSets
 			};
 			// ChildValidatorAdaptor supports both sync and async execution.
-			return AddAsyncValidator(adaptor, adaptor);
+			var component = new RuleComponent<T, TValue, IChildValidatorAdaptor>(adaptor, adaptor, this);
+			Add(component);
+			return component;
 		}
 
-		public IRuleBuilderOptions<T, TValue> SetValidator<TValidator>(Func<T, TValidator> validatorProvider, params string[] ruleSets) where TValidator : IValidator<TValue> {
+		public IRuleBuilderOptions<T, TValue, IChildValidatorAdaptor> SetValidator<TValidator>(Func<T, TValidator> validatorProvider, params string[] ruleSets) where TValidator : IValidator<TValue> {
 			validatorProvider.Guard("Cannot pass a null validatorProvider to SetValidator", nameof(validatorProvider));
 			var adaptor = new ChildValidatorAdaptor<T,TValue>((context, _) => validatorProvider(context.InstanceToValidate), typeof (TValidator)) {
 				RuleSets = ruleSets
 			};
+
 			// ChildValidatorAdaptor supports both sync and async execution.
-			return AddAsyncValidator(adaptor, adaptor);
+			var component = new RuleComponent<T, TValue, IChildValidatorAdaptor>(adaptor, adaptor, this);
+			Add(component);
+			return component;
 		}
 
-		public IRuleBuilderOptions<T, TValue> SetValidator<TValidator>(Func<T, TValue, TValidator> validatorProvider, params string[] ruleSets) where TValidator : IValidator<TValue> {
+		public IRuleBuilderOptions<T, TValue, IChildValidatorAdaptor> SetValidator<TValidator>(Func<T, TValue, TValidator> validatorProvider, params string[] ruleSets) where TValidator : IValidator<TValue> {
 			validatorProvider.Guard("Cannot pass a null validatorProvider to SetValidator", nameof(validatorProvider));
 			var adaptor = new ChildValidatorAdaptor<T,TValue>((context, val) => validatorProvider(context.InstanceToValidate, val), typeof (TValidator)) {
 				RuleSets = ruleSets
 			};
 			// ChildValidatorAdaptor supports both sync and async execution.
-			return AddAsyncValidator(adaptor, adaptor);
+			var component = new RuleComponent<T, TValue, IChildValidatorAdaptor>(adaptor, adaptor, this);
+			Add(component);
+			return component;
 		}
 	}
 }

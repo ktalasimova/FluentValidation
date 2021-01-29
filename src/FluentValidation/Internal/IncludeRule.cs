@@ -25,7 +25,7 @@ namespace FluentValidation.Internal {
 			var adaptor = new ChildValidatorAdaptor<T, T>(validator, validator.GetType());
 			// Note: ChildValidatorAdaptor implements both IPropertyValidator and IAsyncPropertyValidator
 			// So calling AddAsyncValidator will actually register it as supporting both sync and async.
-			AddAsyncValidator(adaptor, adaptor);
+			Add(new RuleComponent<T,T,IChildValidatorAdaptor>(adaptor, adaptor, this));
 		}
 
 		/// <summary>
@@ -36,7 +36,7 @@ namespace FluentValidation.Internal {
 			var adaptor = new ChildValidatorAdaptor<T,T>(func,  validatorType);
 			// Note: ChildValidatorAdaptor implements both IPropertyValidator and IAsyncPropertyValidator
 			// So calling AddAsyncValidator will actually register it as supporting both sync and async.
-			AddAsyncValidator(adaptor, adaptor);
+			Add(new RuleComponent<T,T,IChildValidatorAdaptor>(adaptor, adaptor, this));
 		}
 
 		/// <summary>
